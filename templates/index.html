@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estimador de Precios de Seguro Médico</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            width: 350px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+        }
+        .campo {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: #667eea;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            background: #f0f0f0;
+            border-radius: 10px;
+            color: #333;
+        }
+        .error {
+            background: #ffe0e0;
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2> Estimador de Precios de Seguro Médico</h2>
+
+        <div class="campo">
+            <label> Edad (años):</label>
+            <input type="number" id="age" placeholder="Ej: 30">
+        </div>
+
+        <div class="campo">
+            <label> BMI (Índice de masa corporal):</label>
+            <input type="number" step="0.1" id="bmi" placeholder="Ej: 25.5">
+        </div>
+
+        <div class="campo">
+            <label> Número de hijos:</label>
+            <input type="number" id="children" placeholder="Ej: 2">
+        </div>
+
+        <div class="campo">
+            <label> Sexo:</label>
+            <select id="sex">
+                <option value="male">Masculino</option>
+                <option value="female">Femenino</option>
+            </select>
+        </div>
+
+        <div class="campo">
+            <label> ¿Fumador?</label>
+            <select id="smoker">
+                <option value="yes">Sí</option>
+                <option value="no">No</option>
+            </select>
+        </div>
+
+        <div class="campo">
+            <label> Región:</label>
+            <select id="region">
+                <option value="southwest">Suroeste (Southwest)</option>
+                <option value="southeast">Sureste (Southeast)</option>
+                <option value="northwest">Noroeste (Northwest)</option>
+                <option value="northeast">Noreste (Northeast)</option>
+            </select>
+        </div>
+
+        <button onclick="predict()"> Predecir Costo</button>
+
+        <div class="result" id="result">Esperando datos...</div>
+    </div>
+
+    <script>
+        async function predict() {
+            // Obtener valores
+            const age = document.getElementById("age").value;
+            const bmi = document.getElementById("bmi").value;
+            const children = document.getElementById("children").value;
+            const sex = document.getElementById("sex").value;
+            const smoker = document.getElementById("smoker").value;
+            const region = document.getElementById("region").value;
+
+            // Validar campos numéricos
+            if (!age || !bmi || children === "") {
+                document.getElementById("result").innerHTML = " Por favor, completa edad, BMI y número de hijos";
+                document.getElementById("result").className = "result error";
+                return;
+            }
+
+            // Mostrar que está cargando
+            document.getElementById("result").innerHTML = " Calculando...";
+            document.getElementById("result").className = "result";
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        age: parseFloat(age),
+                        bmi: parseFloat(bmi),
+                        children: parseInt(children),
+                        sex: sex,
+                        smoker: smoker,
+                        region: region
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Error en el servidor");
+                }
+
+                const data = await response.json();
+
+                // Formatear el precio con separadores de miles y 2 decimales
+                const precio = data.charges.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+
+                document.getElementById("result").innerHTML = ` Costo estimado: $${precio}`;
+                document.getElementById("result").className = "result";
+
+            } catch (error) {
+                document.getElementById("result").innerHTML = " Error conectando con el servidor. ¿El backend está corriendo?";
+                document.getElementById("result").className = "result error";
+            }
+        }
+    </script>
+</body>
+</html>
